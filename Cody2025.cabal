@@ -1,0 +1,122 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           Cody2025
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/Cody2025#readme>
+homepage:       https://github.com/githubuser/Cody2025#readme
+bug-reports:    https://github.com/githubuser/Cody2025/issues
+author:         Nick Straw
+maintainer:     nick@broxholme.com
+copyright:      2025 Nick Straw
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/Cody2025
+
+library
+  exposed-modules:
+      Grid
+      Lib
+      Prob1
+      Prob10
+      Prob11
+      Prob12
+      Prob13
+      Prob14
+      Prob15
+      Prob2
+      Prob3
+      Prob4
+      Prob5
+      Prob6
+      Prob7
+      Prob8
+      Prob9
+      Queue
+      TotalMap
+      Utils
+  other-modules:
+      Paths_Cody2025
+  autogen-modules:
+      Paths_Cody2025
+  hs-source-dirs:
+      src
+  default-extensions:
+      GHC2021
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , comonad
+    , containers
+    , distributive
+    , hashable
+    , parsers
+    , pqueue
+    , recursion-schemes
+    , split
+    , text
+    , timeit
+  default-language: Haskell2010
+
+executable Cody2025-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_Cody2025
+  autogen-modules:
+      Paths_Cody2025
+  hs-source-dirs:
+      app
+  default-extensions:
+      GHC2021
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      Cody2025
+    , base >=4.7 && <5
+    , comonad
+    , containers
+    , distributive
+    , hashable
+    , parsers
+    , pqueue
+    , recursion-schemes
+    , split
+    , text
+    , timeit
+  default-language: Haskell2010
+
+test-suite Cody2025-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_Cody2025
+  autogen-modules:
+      Paths_Cody2025
+  hs-source-dirs:
+      test
+  default-extensions:
+      GHC2021
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      Cody2025
+    , base >=4.7 && <5
+    , comonad
+    , containers
+    , distributive
+    , hashable
+    , parsers
+    , pqueue
+    , recursion-schemes
+    , split
+    , text
+    , timeit
+  default-language: Haskell2010

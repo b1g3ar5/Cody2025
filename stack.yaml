@@ -1,0 +1,18 @@
+resolver: nightly-2025-03-17 #nightly-2025-01-03
+
+
+packages:
+- .
+- ../../../Useful
+
+extra-deps: []
+#- regex-applicative-0.3.4
+#- filtrable-0.1.6.0
+# - smtp-mail-0.4.0.0
+#- semiring-num-1.6.0.4
+
+
+system-ghc: true
+install-ghc: false
+allow-newer: true
+

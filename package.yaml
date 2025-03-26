@@ -1,0 +1,71 @@
+name:                Cody2025
+version:             0.1.0.0
+github:              "githubuser/Cody2025"
+license:             BSD-3-Clause
+author:              "Nick Straw"
+maintainer:          "nick@broxholme.com"
+copyright:           "2025 Nick Straw"
+
+default-extensions: GHC2021
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/githubuser/Cody2025#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- comonad
+- containers
+- distributive
+- hashable
+- parsers
+- recursion-schemes
+- split
+- text
+- timeit
+- pqueue
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+library:
+  source-dirs: src
+
+executables:
+  Cody2025-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Cody2025
+
+tests:
+  Cody2025-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Cody2025
