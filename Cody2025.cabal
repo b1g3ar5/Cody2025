@@ -34,6 +34,10 @@ library
       Prob13
       Prob14
       Prob15
+      Prob16
+      Prob16_2
+      Prob17
+      Prob18
       Prob2
       Prob3
       Prob4
@@ -55,17 +59,22 @@ library
       GHC2021
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      MemoTrie
+    , array
+    , base >=4.7 && <5
     , comonad
     , containers
     , distributive
     , hashable
+    , linear
     , parsers
     , pqueue
     , recursion-schemes
+    , search-algorithms
     , split
     , text
     , timeit
+    , unordered-containers
   default-language: Haskell2010
 
 executable Cody2025-exe
@@ -81,17 +90,22 @@ executable Cody2025-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Cody2025
+    , MemoTrie
+    , array
     , base >=4.7 && <5
     , comonad
     , containers
     , distributive
     , hashable
+    , linear
     , parsers
     , pqueue
     , recursion-schemes
+    , search-algorithms
     , split
     , text
     , timeit
+    , unordered-containers
   default-language: Haskell2010
 
 test-suite Cody2025-test
@@ -108,15 +122,20 @@ test-suite Cody2025-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       Cody2025
+    , MemoTrie
+    , array
     , base >=4.7 && <5
     , comonad
     , containers
     , distributive
     , hashable
+    , linear
     , parsers
     , pqueue
     , recursion-schemes
+    , search-algorithms
     , split
     , text
     , timeit
+    , unordered-containers
   default-language: Haskell2010

@@ -1,36 +1,30 @@
+{-# LANGUAGE LambdaCase #-}
+{-# Language BlockArguments #-}
+
+
 module Prob10(prob10) where
 
 import Utils 
 import Data.PQueue.Prio.Min qualified as Q
 import Data.Map qualified as M
+import Data.MemoTrie
 
 
 getRow, getCol :: [(Coord, Int)] -> Int -> [Int]
 getRow g ix = snd <$> filter (\((x,y),n) -> y==ix) g
 getCol g ix = snd <$> filter (\((x,y),n) -> x==ix) g
 
-
-dijkstra :: (Ord s) => Q.MinPQueue Int s -> M.Map s Int -> (s -> [s]) -> (s -> s -> Int) -> (s -> Bool) -> M.Map s Int
-dijkstra pipeline visited nextFn costFn finishFn
-  | Q.null pipeline = visited
-  | finishFn state = newVisited
-  | state `M.member` visited = dijkstra remainingPipeline newVisited nextFn costFn finishFn
-  | otherwise = dijkstra newPipeline newVisited nextFn costFn finishFn
+search grid start finish = go finish
   where
-    ((savedMin, state), remainingPipeline) = Q.deleteFindMin pipeline
-    newStates = filter (`M.notMember` visited) $ nextFn state
-    newPipeline = remainingPipeline `Q.union` Q.fromList ((\n -> (savedMin + costFn state n, n)) <$> newStates)
-    newVisited = M.insertWith min state savedMin visited
-
-
-search :: M.Map Coord Int -> Coord -> Coord -> Int
-search grid start finish = (dijkstra (Q.singleton (grid M.! start) start) M.empty nextFn costFn finishFn) M.! finish
-  where
-    nextFn (x,y) = filter (\(a,b) -> (a>=0)&&(b>=0)&&(a<50)&&(b<50)) [(x+1, y), (x, y+1)]
-    finishFn = (== finish)
-    costFn _ to = grid M.! to
-
-
+    go :: Coord -> Int
+    go = memo \p -> 
+      case p of
+        (0,0) -> grid M.! p
+        (0,y) -> grid M.! p + go (0,y-1)
+        (x,0) -> grid M.! p + go (x-1, 0)
+        (x,y) -> grid M.! p + min (go (x-1,y)) (go (x, y-1))
+	
+	
 prob10 :: IO ()
 prob10 = do
   ss <- getLines 10

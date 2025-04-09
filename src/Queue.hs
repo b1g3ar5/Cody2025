@@ -13,8 +13,8 @@ pattern Empty <- Queue [] _ _
   where
     Empty = Queue [] [] 0
 
-pattern (:<|) :: a -> Queue a -> Queue a
-pattern x :<| xs <- (pop -> Just (x, xs))
+pattern (:<) :: a -> Queue a -> Queue a
+pattern x :< xs <- (pop -> Just (x, xs))
 
 (|>) :: Queue a -> a -> Queue a
 q |> x = snoc x q
@@ -39,6 +39,7 @@ instance Show a => Show (Queue a) where
     $ showString "fromList "
     . shows (toList q)
 
+
 instance Read a => Read (Queue a) where
   readsPrec prec
     = readParen (prec >= 11) $ \str ->
@@ -46,8 +47,10 @@ instance Read a => Read (Queue a) where
          (xs,         str) <- reads str
          return (fromList xs, str)
 
+
 singleton :: a -> Queue a
 singleton x = Queue [x] [] 1
+
 
 fromList :: [a] -> Queue a
 fromList xs = Queue xs [] (length xs)
@@ -56,9 +59,11 @@ fromList xs = Queue xs [] (length xs)
 appendList :: Queue a -> [a] -> Queue a
 appendList = foldl' (|>)
 
+
 pop :: Queue a -> Maybe (a, Queue a)
 pop (Queue (x:f) r s) = Just (x, exec f r s)
 pop _                 = Nothing
+
 
 snoc :: a -> Queue a -> Queue a
 snoc x (Queue f r s) = exec f (x:r) s
@@ -66,6 +71,8 @@ snoc x (Queue f r s) = exec f (x:r) s
 -- Added - should not be allowed - write a deque...
 cons :: a -> Queue a -> Queue a
 cons x (Queue f r s) = Queue (x:f) r (s+1)
+
+insert = cons
 
 exec :: [a] -> [a] -> Int -> Queue a
 exec f r 0    = fromList (rotate f r [])

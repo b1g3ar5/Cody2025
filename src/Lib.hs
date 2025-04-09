@@ -19,6 +19,9 @@ import Prob12
 import Prob13
 import Prob14
 import Prob15
+import Prob16
+import Prob17
+import Prob18
 
 someFunc :: IO ()
 someFunc = do
@@ -31,4 +34,12 @@ someFunc = do
   --prob7
   --prob8
   --prob9
-  prob10
+  --prob10
+  --prob11
+  --prob12
+  --prob13
+  --prob14
+  --prob15
+  --prob16
+  --prob17
+  prob18

@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 
 module Utils (
   -- Parsing in the file
@@ -37,10 +39,12 @@ module Utils (
   -- Coordinates
   , Coord
   , Coord3
+  , Coord4
   , Direction(..)
   , toCoord
+  , scale2
   , scale3
-  , scale
+  , scale4
   , neighbours4
   , neighbourCoords4
   , neighbours6
@@ -107,8 +111,10 @@ module Utils (
   , trace
 
   -- some of my functions
+  , binSearch
   , floodFill
   , bfs
+  , dijkstra
   , dfs
   , dfsSet
   , fromRight
@@ -164,11 +170,13 @@ import System.TimeIt ( timeIt )
 import Text.ParserCombinators.ReadP (ReadP, many1, readP_to_S, satisfy, string, many, sepBy, sepBy1, endBy, endBy1, char, manyTill, look)
 import Text.Parser.LookAhead
 import Data.Hashable ( Hashable )
+import Data.Foldable ( traverse_ )
 import Debug.Trace (trace)
 import qualified Data.Set as S
-import qualified Queue as Q
-import Data.Foldable ( Foldable(foldl'), traverse_ )
 import Data.Ord ( comparing, Down(Down) )
+import Data.MemoTrie ( HasTrie(..) )
+import qualified Queue as Q
+import qualified Data.PQueue.Min as QQ
 
 
 --- Things to add
@@ -352,11 +360,17 @@ instance Num Coord3 where
   fromInteger i = (fromInteger i, 0, 0)
 
 
+scale4 :: Int -> Coord4 -> Coord4
+scale4 k (x,y,z,a) = (k*x, k*y, k*z, k*a)
+
 scale3 :: Int -> Coord3 -> Coord3
 scale3 k (x,y,z) = (k*x, k*y, k*z)
 
-scale :: Int -> Coord -> Coord
-scale k (x,y) = (k*x, k*y)
+scale2 :: Int -> Coord -> Coord
+scale2 k (x,y) = (k*x, k*y)
+
+mod4 :: Coord4 -> Coord4 -> Coord4
+(x,y,z,a) `mod4` (qx,qy,qz,qa) = (x `mod` qx, y `mod` qy, z `mod` qz, a `mod` qa)
 
 
 manhattan :: Coord -> Coord -> Int
@@ -450,6 +464,7 @@ dn3 = (0,1,0)
 in3 = (0,0,1)
 ot3 = (0,0,-1)
 
+
 levi :: Int -> Int -> Int -> Int
 levi 0 1 2 = 1
 levi 1 2 0 = 1
@@ -480,44 +495,57 @@ crossProduct (v1,v2,v3) (w1,w2,w3) = sum $ (\i -> sum $ (\j -> sum $ (\k -> scal
 
 
 
-floodFill :: Ord a => a -> (a -> [a]) -> [a]
-floodFill start getNext = go S.empty (Q.fromList [start])
-  where
-    go !seen = \case
-                Q.Empty -> []
-                x Q.:<| newq 
-                  | x `S.member` seen -> go seen newq
-                  | otherwise -> x : go (x `S.insert` seen) (Q.appendList newq (getNext x))
+floodFill :: (Ord a, Show a) => a -> (a -> [a]) -> [a]
+floodFill start next = bfs [start] next
   
 
-bfs :: Ord a => (a -> [a]) -> [a]-> [a]
-bfs next start = loop S.empty (Q.fromList start)
+bfs :: (Ord a, Show a) => [a]-> (a -> [a]) -> [a]
+bfs start next = go S.empty (Q.fromList start)
   where
-    loop !seen = \case
-                  Q.Empty -> []
-                  x Q.:<| newq
-                    | x `S.member` seen -> loop seen newq
-                    | otherwise -> x : loop (x `S.insert` seen) (Q.appendList newq (next x))
+    go !seen = \case
+      Q.Empty -> []
+      x Q.:< newq
+        | x `S.member` seen -> go seen newq
+        -- | otherwise -> x : go (x `S.insert` seen) (Q.appendList newq $ next x)
+        | otherwise -> go (x `S.insert` seen) (foldr Q.insert newq $ next x)
+      _ -> error $ "Not sure it's possible to get here in bfs...: " ++ show seen
 
 
-dfs :: Ord a => (a -> [a]) -> [a]-> [a]
-dfs next start = loop S.empty (Q.fromList start)
+
+dijkstra :: (Ord s, Show s) => (s -> [s]) -> (s -> s -> s) -> (s -> Bool) -> [s] -> Maybe s
+dijkstra nextFn costFn finishFn start = go S.empty (Q.fromList start)
   where
-    loop !seen = \case
-                  Q.Empty -> []
-                  x Q.:<| newq
-                    | x `S.member` seen -> loop seen newq
-                    | otherwise -> x : loop (x `S.insert` seen) (foldl' (\q x -> Q.cons x q) newq (next x))
+    go !visited  = \case
+      Q.Empty -> Nothing
+      x Q.:< newQ
+        | finishFn x -> Just x
+        | x `S.member` visited -> go visited newQ 
+        | otherwise -> go (x `S.insert` visited) (Q.appendList newQ $ costFn x <$> nextFn x)
+      _ -> error $ "Not sure it's possible to get here in dijkstra...: " ++ show visited
 
 
-dfsSet :: Ord a => (a -> S.Set a) -> S.Set a-> S.Set a
-dfsSet next start = loop S.empty (Q.fromList $ S.toList start)
+dfs :: (Ord a, Show a) => (a -> [a]) -> [a]-> [a]
+dfs next start = go S.empty (Q.fromList start)
   where
-    loop !seen = \case
-                  Q.Empty -> S.empty
-                  x Q.:<| newq
-                    | x `S.member` seen -> loop seen newq
-                    | otherwise -> x `S.insert` loop (x `S.insert` seen) (foldl' (\q x -> Q.cons x q) newq (next x))
+    go !seen = \case
+      Q.Empty -> []
+      x Q.:< newq
+        | x `S.member` seen -> go seen newq
+        -- | otherwise -> x : loop (x `S.insert` seen) (foldl' (\q x -> Q.cons x q) newq (next x))
+        | otherwise -> go (x `S.insert` seen) (foldr Q.insert newq $ next x)
+      _ -> error $ "Not sure it's possible to get here in bfs...: " ++ show seen
+
+
+dfsSet :: (Ord a, Show a) => S.Set a-> (a -> S.Set a) -> S.Set a
+dfsSet start next = go S.empty (Q.fromList $ S.toList start)
+  where
+    go !seen = \case
+      Q.Empty -> S.empty
+      x Q.:< newq
+        | x `S.member` seen -> go seen newq
+        -- | otherwise -> x `S.insert` loop (x `S.insert` seen) (foldl' (\q x -> Q.cons x q) newq (next x))
+        | otherwise -> go (x `S.insert` seen) (foldr Q.insert newq $ next x)
+      _ -> error $ "Not sure it's possible to get here in bfs...: " ++ show seen
 
 
 -- Floyd–Warshall algorithm to detect cycles
@@ -555,3 +583,33 @@ data ListF a b = Nil | Cons a b deriving (Eq,Ord,Show,Read,Functor)
 type Tree a = Fix (TreeF a)
 
 newtype ForestF a r = ForestF [TreeF a r]
+
+
+--- Coord 4 stuff
+
+type Coord4 = (Int, Int, Int, Int)
+
+instance Num Coord4 where
+  (x1, y1, z1, a1) + (x2, y2, z2, a2) = (x1+x2, y1+y2, z1+z2, a1+a2)
+  (x1, y1, z1, a1) - (x2, y2, z2, a2) = (x1-x2, y1-y2, z1-z2, a1-a2)
+  (x1, y1, z1, a1) * (x2, y2, z2, a2) = (x1*x2, y1*y2, z1*z2, a1*a2)
+  abs (x, y, z, a) = (abs x, abs y, abs z, abs a)
+  signum (x, y, z, a) = (signum x, signum y, signum z, signum a)
+  fromInteger i = (fromInteger i, 0, 0, 0)
+
+
+instance (HasTrie a, HasTrie b, HasTrie c, HasTrie d) => HasTrie (a,b,c,d) where
+    newtype (a,b,c,d) :->: x = QuadTrie (((a,b,c),d) :->: x)
+    trie f = QuadTrie (trie (f . trip))
+    untrie (QuadTrie t) = untrie t . detrip
+    enumerate (QuadTrie t) = enum' trip t
+
+
+trip :: ((a,b,c),d) -> (a,b,c,d)
+trip ((a,b,c),d) = (a,b,c,d)
+
+detrip :: (a,b,c,d) -> ((a,b,c),d)
+detrip (a,b,c,d) = ((a,b,c),d)
+
+enum' :: (HasTrie a) => (a -> a') -> (a :->: b) -> [(a', b)]
+enum' f = (fmap.first) f . enumerate

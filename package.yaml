@@ -33,6 +33,11 @@ dependencies:
 - text
 - timeit
 - pqueue
+- MemoTrie
+- array
+- linear
+- search-algorithms
+- unordered-containers
 
 ghc-options:
 - -Wall
