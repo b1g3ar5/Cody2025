@@ -42,4 +42,5 @@ someFunc = do
   --prob15
   --prob16
   --prob17
-  prob18
+  timeIt $ prob18
+  --dijkstraMain

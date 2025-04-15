@@ -7,7 +7,6 @@ import Data.Foldable (Foldable(..))
 
 data Queue a = Queue [a] [a] !Int
 
-
 pattern Empty :: Queue a
 pattern Empty <- Queue [] _ _
   where
@@ -72,6 +71,7 @@ snoc x (Queue f r s) = exec f (x:r) s
 cons :: a -> Queue a -> Queue a
 cons x (Queue f r s) = Queue (x:f) r (s+1)
 
+insert :: a -> Queue a -> Queue a
 insert = cons
 
 exec :: [a] -> [a] -> Int -> Queue a

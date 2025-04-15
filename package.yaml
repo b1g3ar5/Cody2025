@@ -38,6 +38,8 @@ dependencies:
 - linear
 - search-algorithms
 - unordered-containers
+- vector
+- mtl
 
 ghc-options:
 - -Wall

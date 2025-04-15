@@ -112,9 +112,11 @@ module Utils (
 
   -- some of my functions
   , binSearch
-  , floodFill
   , bfs
+  , bfs1
   , dijkstra
+  --, dijkstraH
+  --, dijkstraHI
   , dfs
   , dfsSet
   , fromRight
@@ -169,14 +171,19 @@ import Data.Either ( lefts, rights, fromRight )
 import System.TimeIt ( timeIt )
 import Text.ParserCombinators.ReadP (ReadP, many1, readP_to_S, satisfy, string, many, sepBy, sepBy1, endBy, endBy1, char, manyTill, look)
 import Text.Parser.LookAhead
-import Data.Hashable ( Hashable )
+import Data.Hashable ( Hashable, hash )
 import Data.Foldable ( traverse_ )
 import Debug.Trace (trace)
 import qualified Data.Set as S
+import qualified Data.IntSet as I
 import Data.Ord ( comparing, Down(Down) )
 import Data.MemoTrie ( HasTrie(..) )
-import qualified Queue as Q
-import qualified Data.PQueue.Min as QQ
+import Data.PQueue.Min qualified as PQ
+import qualified Data.Sequence as Q
+import Data.Vector qualified as V
+import qualified Data.Vector.Mutable as MV  
+--import qualified Heap as H
+--import qualified HeapIndexed as HI
 
 
 --- Things to add
@@ -495,21 +502,27 @@ crossProduct (v1,v2,v3) (w1,w2,w3) = sum $ (\i -> sum $ (\j -> sum $ (\k -> scal
 
 
 
-floodFill :: (Ord a, Show a) => a -> (a -> [a]) -> [a]
-floodFill start next = bfs [start] next
-  
-
-bfs :: (Ord a, Show a) => [a]-> (a -> [a]) -> [a]
-bfs start next = go S.empty (Q.fromList start)
+-- This uses a FIFO queue
+bfs :: (Ord s) => (s -> [s]) -> (s -> Bool) -> s -> s
+bfs next finishFn start = go S.empty (Q.singleton start)
   where
     go !seen = \case
-      Q.Empty -> []
-      x Q.:< newq
+      Q.Empty -> error "The queue is empty in bfs"
+      x Q.:<| newq
+        | finishFn x -> x
         | x `S.member` seen -> go seen newq
-        -- | otherwise -> x : go (x `S.insert` seen) (Q.appendList newq $ next x)
-        | otherwise -> go (x `S.insert` seen) (foldr Q.insert newq $ next x)
-      _ -> error $ "Not sure it's possible to get here in bfs...: " ++ show seen
+        | otherwise -> go (x `S.insert` seen) (newq Q.>< (Q.fromList $ next x))
 
+
+bfs1 :: (Ord s) => (s -> [s]) -> (s -> Bool) -> s -> [s]
+bfs1 next finishFn start = go S.empty (Q.singleton start)
+  where
+    go !seen = \case
+      Q.Empty -> error "The queue is empty in bfs"
+      x Q.:<| newq
+        | finishFn x -> [x]
+        | x `S.member` seen -> go seen newq
+        | otherwise -> go (x `S.insert` seen) (foldl' (Q.|>) newq $ next x)
 
 
 dijkstra :: (Ord s, Show s) => (s -> [s]) -> (s -> s -> s) -> (s -> Bool) -> [s] -> Maybe s
@@ -517,34 +530,60 @@ dijkstra nextFn costFn finishFn start = go S.empty (Q.fromList start)
   where
     go !visited  = \case
       Q.Empty -> Nothing
-      x Q.:< newQ
+      x Q.:<| newq
         | finishFn x -> Just x
-        | x `S.member` visited -> go visited newQ 
-        | otherwise -> go (x `S.insert` visited) (Q.appendList newQ $ costFn x <$> nextFn x)
+        | x `S.member` visited -> go visited newq 
+        | otherwise -> go (x `S.insert` visited) (newq <> Q.fromList (costFn x <$> nextFn x))
       _ -> error $ "Not sure it's possible to get here in dijkstra...: " ++ show visited
 
+{-
+dijkstraH :: (Ord s, Show s) => (s -> [s]) -> (s -> s -> s) -> (s -> Bool) -> [s] -> Maybe s
+dijkstraH nextFn costFn finishFn start = go S.empty (H.fromList start)
+  where
+    go !visited  = \case
+      H.EmptyHeap -> Nothing
+      x H.:< newq
+        | finishFn x -> Just x
+        | x `S.member` visited -> go visited newq 
+        | otherwise -> go (x `S.insert` visited) (H.appendList newq $ costFn x <$> nextFn x)
+      _ -> error $ "Not sure it's possible to get here in dijkstra...: " ++ show visited
+-}
+{-
+dijkstraHI :: (Ord k, Ord s, Show k, Show s) => ((k,s) -> [(k,s)]) -> ((k,s) -> (k,s) -> (k,s)) -> ((k,s) -> Bool) -> [(k,s)] -> Maybe (k,s)
+dijkstraHI nextFn costFn finishFn start = go S.empty (HI.fromList start)
+  where
+    go !visited  = \case
+      HI.EmptyHeap -> Nothing
+      x HI.:< newq
+        | finishFn x -> Just x
+        | x `S.member` visited -> go visited newq 
+        | otherwise -> go (x `S.insert` visited) (HI.appendList newq $ costFn x <$> nextFn x)
+      _ -> error $ "Not sure it's possible to get here in dijkstra...: " ++ show visited
+-}
 
 dfs :: (Ord a, Show a) => (a -> [a]) -> [a]-> [a]
 dfs next start = go S.empty (Q.fromList start)
   where
     go !seen = \case
       Q.Empty -> []
-      x Q.:< newq
+      x Q.:<| newq
         | x `S.member` seen -> go seen newq
         -- | otherwise -> x : loop (x `S.insert` seen) (foldl' (\q x -> Q.cons x q) newq (next x))
-        | otherwise -> go (x `S.insert` seen) (foldr Q.insert newq $ next x)
+        | otherwise -> go (x `S.insert` seen) (newq <> Q.fromList (next x))
       _ -> error $ "Not sure it's possible to get here in bfs...: " ++ show seen
 
+
+fromSet :: S.Set a -> Q.Seq a
+fromSet = Q.fromList . S.toList
 
 dfsSet :: (Ord a, Show a) => S.Set a-> (a -> S.Set a) -> S.Set a
 dfsSet start next = go S.empty (Q.fromList $ S.toList start)
   where
     go !seen = \case
       Q.Empty -> S.empty
-      x Q.:< newq
+      x Q.:<| newq
         | x `S.member` seen -> go seen newq
-        -- | otherwise -> x `S.insert` loop (x `S.insert` seen) (foldl' (\q x -> Q.cons x q) newq (next x))
-        | otherwise -> go (x `S.insert` seen) (foldr Q.insert newq $ next x)
+        | otherwise -> go (x `S.insert` seen) (newq <> fromSet (next x))
       _ -> error $ "Not sure it's possible to get here in bfs...: " ++ show seen
 
 
