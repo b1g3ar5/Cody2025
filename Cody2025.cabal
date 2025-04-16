@@ -66,6 +66,7 @@ library
     , base >=4.7 && <5
     , comonad
     , containers
+    , deepseq
     , distributive
     , hashable
     , linear
@@ -99,6 +100,7 @@ executable Cody2025-exe
     , base >=4.7 && <5
     , comonad
     , containers
+    , deepseq
     , distributive
     , hashable
     , linear
@@ -133,6 +135,7 @@ test-suite Cody2025-test
     , base >=4.7 && <5
     , comonad
     , containers
+    , deepseq
     , distributive
     , hashable
     , linear

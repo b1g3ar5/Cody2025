@@ -5,15 +5,19 @@
 
 module Prob18(prob18) where
 
-import Utils hiding (neighbours4)
+import Utils (timeIt, Coord4, Coord3, getF)
 import Data.Set qualified as S
-import Data.Array qualified as A
+import Data.IntMap.Strict qualified as IM
 import Data.MemoTrie
+import qualified Data.Sequence as Q
 
 
 type Health = Int
 type Time = Int
 type State = ((Time,Health), Coord3) -- time and health
+
+--instance NFData State where
+  --rnf ((t, h), (x, y, z)) = rnf t `seq` rnf h `seq` rnf x `seq` rnf y `seq` rnf z
 
 
 {-# INLINE inBounds3 #-}
@@ -38,6 +42,7 @@ parse l = makePred (read $ init $ ws!!2) (read $ init $ ws!!3) (read $ init $ ws
       +s*(-1 + ((a-vs*t+1) `mod` 3))) `mod` qt == rm
 
 
+
 {-# INLINE neighbours3 #-}
 neighbours3 :: Coord3 -> [Coord3]
 neighbours3 p = filter inBounds3 $ (+ p) <$> [(1,0,0), (-1,0,0), (0,1,0), (0,-1,0), (0,0,1), (0,0,-1), (0,0,0)]
@@ -49,7 +54,7 @@ solve2 startHealth start finish !debris = bfs nextStates ((==finish) . snd) ((0,
     nextStates :: State -> [State]
     nextStates ((time, health),place) = foldl' go [] $ neighbours3 place
       where
-        go acc nxt
+        go !acc nxt
           | hs <= health = ((time+1, health - hs), nxt) : acc
           | otherwise = acc
           where
@@ -57,6 +62,22 @@ solve2 startHealth start finish !debris = bfs nextStates ((==finish) . snd) ((0,
 
     hits :: Int -> Coord3 -> Int
     hits = memo2 \time p@(x,y,z) -> if p == (0,0,0) then 0 else length $ filter (\pred -> pred time (x,y,z,0)) debris
+
+
+bfs :: (State -> [State]) -> (State -> Bool) -> State -> State
+bfs next finishFn start = go IM.empty (Q.singleton start)
+  where
+    go !seen = \case
+      Q.Empty -> error "The queue is empty in bfs"
+      x Q.:<| newq
+        | finishFn x -> x
+        | (stateToInt x) `IM.member` seen -> go seen newq
+        | otherwise -> go (IM.insert (stateToInt x) () seen) (newq Q.>< (Q.fromList $ next x))
+
+
+stateToInt :: State -> Int
+stateToInt ((t, h), (x, y, z)) =
+  (((((t * 60) + h) * (dims !! 0)) + x) * (dims !! 1) + y) * (dims !! 2) + z
 
 
 dims :: [Int]
